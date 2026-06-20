@@ -50,7 +50,7 @@ const Chatpage = () => {
   return (
     <Box display="flex" flexDirection="column" w="100%" h="100vh" bg="gray.50">
       {user && <SideDrawer />}
-      <Box display="flex" justifyContent="space-between" flex="1" p="15px" h="calc(100vh - 70px)" overflow="hidden">
+      <Box display="flex" justifyContent="space-between" flex="1" p={{ base: "5px", md: "15px" }} h="calc(100vh - 70px)" overflow="hidden">
         {user && <MyChats fetchAgain={fetchAgain} />}
         {user && (
           <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
