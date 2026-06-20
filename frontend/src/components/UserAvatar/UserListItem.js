@@ -1,7 +1,7 @@
-import { Avatar, Box, Text } from "@chakra-ui/react";
+import { Avatar, AvatarBadge, Box, Text } from "@chakra-ui/react";
 import React from "react";
 
-const UserListItem = ({ user, handleFunction }) => {
+const UserListItem = ({ user, handleFunction, isOnline }) => {
   return (
     <Box
       onClick={handleFunction}
@@ -26,7 +26,9 @@ const UserListItem = ({ user, handleFunction }) => {
         cursor="pointer"
         name={user.name}
         src={user.pic}
-      />
+      >
+        {isOnline && <AvatarBadge boxSize="1.2em" bg="green.500" />}
+      </Avatar>
       <Box>
         <Text>{user.name}</Text>
         <Text fontSize="xs">

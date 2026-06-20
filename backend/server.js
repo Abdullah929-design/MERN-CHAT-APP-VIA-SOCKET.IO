@@ -9,6 +9,8 @@ const cors = require("cors");
 const dotenv=require('dotenv');
 const app=express();
 const path = require("path");
+const redisClient = require("./config/redis");
+const { createAdapter } = require("@socket.io/redis-adapter");
 
 
 dotenv.config({ path: __dirname + "/.env" });
@@ -53,14 +55,53 @@ const io=require("socket.io")(server,{
     },
 });
 
+// Setup Redis Adapter for multi-instance socket synchronization
+const pubClient = redisClient;
+const subClient = redisClient.duplicate();
+
+subClient.on("error", (err) => console.error("Redis Sub Client Error:", err));
+subClient.on("connect", () => console.log("Redis Sub Client connected successfully."));
+
+(async () => {
+    try {
+        await subClient.connect();
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log("Socket.io Redis Adapter integrated successfully.");
+    } catch (err) {
+        console.error("Failed to connect Redis subClient for Socket.io adapter:", err);
+    }
+})();
+
 //connection
 io.on("connection",(socket)=>{
     console.log("Connected to socket.io");
 
-    socket.on("setup",(userData)=>{
+    socket.on("setup", async (userData) => {
         socket.join(userData._id);
-        console.log(userData._id);
+        socket.userId = userData._id;
+        try {
+            await redisClient.sAdd("online_users", userData._id);
+            console.log(`User online: ${userData._id}`);
+            //just broadcasting to all other users that this user is online, so that they can update their UI accordingly
+            socket.broadcast.emit("user_online", userData._id);
+        } catch (err) {
+            console.error("Redis sAdd error:", err);
+        }
         socket.emit("connected");
+    });
+
+    socket.on("disconnect", async () => {
+        console.log("User Disconnected from Socket");
+        if (socket.userId) {
+            try {
+                await redisClient.sRem("online_users", socket.userId);
+                console.log(`User offline: ${socket.userId}`);
+                //just broadcasting to all other users that this user is offline, so that they can update their UI accordingly
+                socket.broadcast.emit("user_offline", socket.userId);
+            } catch (err) {
+                console.error("Redis sRem error:", err);
+            }
+        }
     });
 
 

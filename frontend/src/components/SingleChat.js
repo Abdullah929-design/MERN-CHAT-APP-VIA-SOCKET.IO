@@ -11,7 +11,7 @@ import { ChatState } from "../context/ChatProvider";
 import io from "socket.io-client";
 
 const ENDPOINT = window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin;
-var socket, selectedChatCompare;
+var selectedChatCompare;
 
 
 
@@ -24,8 +24,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [isTyping, setIsTyping] = useState(false);
   const toast = useToast();
 
-  const { selectedChat, setSelectedChat, user, notification, setNotification } =
+  const { selectedChat, setSelectedChat, user, notification, setNotification,socket } =
     ChatState();
+
+
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -97,13 +99,19 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
+//for typing showing
   useEffect(() => {
-    socket = io(ENDPOINT);
-    socket.emit("setup", user);
-    socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop typing", () => setIsTyping(false));
-  }, [user]);
+  if (!socket) return;
+  
+  setSocketConnected(true); // Connected globally
+  socket.on("typing", () => setIsTyping(true));
+  socket.on("stop typing", () => setIsTyping(false));
+  return () => {
+    socket.off("typing");
+    socket.off("stop typing");
+  };
+}, [socket]);
+
 
   useEffect(() => {
     fetchMessages();

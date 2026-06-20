@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
+const redisClient = require("../config/redis");
 
 
 //@description     Get or Search all users
@@ -83,4 +84,17 @@ const authUser = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { allUsers, registerUser, authUser };
+//@description     Get all online users
+//@route           GET /api/user/online
+//@access          Protected
+const getOnlineUsers = asyncHandler(async (req, res) => {
+  try {
+    const onlineUsers = await redisClient.sMembers("online_users");
+    res.json(onlineUsers);
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
+module.exports = { allUsers, registerUser, authUser, getOnlineUsers };

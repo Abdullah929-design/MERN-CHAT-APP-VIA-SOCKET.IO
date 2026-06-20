@@ -20,7 +20,7 @@ import {
   Spinner,
   Badge
 } from "@chakra-ui/react";
-import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
+import { BellIcon, ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
 import { useHistory } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
@@ -43,6 +43,7 @@ function SideDrawer() {
     setNotification,
     chats,
     setChats,
+    onlineUsers,
   } = ChatState();
 
   const toast = useToast();
@@ -123,24 +124,35 @@ function SideDrawer() {
   return (
     <>
       <Box
-        d="flex"
+        display="flex"
         justifyContent="space-between"
         alignItems="center"
         bg="white"
         w="100%"
-        p="5px 10px 5px 10px"
-        borderWidth="5px"
+        p="10px 20px"
+        borderBottomWidth="1px"
+        borderColor="gray.200"
+        boxShadow="sm"
       >
         <Tooltip label="Search Users to chat" hasArrow placement="bottom-end">
-          <Button variant="ghost" onClick={onOpen}>
-            <i className="fas fa-search"></i>
-            <Text d={{ base: "none", md: "flex" }} px={4}>
-              Search User
-            </Text>
+          <Button
+            variant="outline"
+            onClick={onOpen}
+            leftIcon={<SearchIcon />}
+            borderColor="gray.200"
+            color="gray.500"
+            fontWeight="normal"
+            bg="gray.50"
+            _hover={{ bg: "gray.100", borderColor: "gray.300" }}
+            borderRadius="lg"
+            px={4}
+            size="sm"
+          >
+            Search user...
           </Button>
         </Tooltip>
-        <Text fontSize="2xl" fontFamily="Work sans">
-          Talk-A-Tive
+        <Text fontSize="2xl" fontFamily="Work sans" fontWeight="bold" color="teal.500">
+          REAL TIME CHAT APP
         </Text>
         <Box display="flex" alignItems="center">
           <Menu>
@@ -219,6 +231,7 @@ function SideDrawer() {
                 <UserListItem
                   key={user._id}
                   user={user}
+                  isOnline={onlineUsers && onlineUsers.includes(user._id)}
                   handleFunction={() => accessChat(user._id)}
                 />
               ))

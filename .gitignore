@@ -24,3 +24,9 @@ yarn-error.log*
 # System files
 .DS_Store
 Thumbs.db
+
+# Local portable Redis binaries
+redis/
+
+# Redis snapshots
+*.rdb

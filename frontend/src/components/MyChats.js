@@ -10,7 +10,7 @@ import { ChatState } from "../context/ChatProvider";
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
 
-  const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
+  const { selectedChat, setSelectedChat, user, chats, setChats, onlineUsers } = ChatState();
 
   const toast = useToast();
 
@@ -87,32 +87,49 @@ const MyChats = ({ fetchAgain }) => {
       >
         {chats ? (
           <Stack overflowY="scroll">
-            {chats.map((chat) => (
-              <Box
-                onClick={() => setSelectedChat(chat)}
-                cursor="pointer"
-                bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
-                color={selectedChat === chat ? "white" : "black"}
-                px={3}
-                py={2}
-                borderRadius="lg"
-                key={chat._id}
-              >
-                <Text>
-                  {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users)
-                    : chat.chatName}
-                </Text>
-                {chat.latestMessage && (
-                  <Text fontSize="xs">
-                    <b>{chat.latestMessage.sender.name} : </b>
-                    {chat.latestMessage.content.length > 50
-                      ? chat.latestMessage.content.substring(0, 51) + "..."
-                      : chat.latestMessage.content}
+            {chats.map((chat) => {
+              const otherUser = !chat.isGroupChat && loggedUser
+                ? chat.users.find((u) => u._id !== loggedUser._id)
+                : null;
+              const isOnline = otherUser && onlineUsers && onlineUsers.includes(otherUser._id);
+
+              return (
+                <Box
+                  onClick={() => setSelectedChat(chat)}
+                  cursor="pointer"
+                  bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
+                  color={selectedChat === chat ? "white" : "black"}
+                  px={3}
+                  py={2}
+                  borderRadius="lg"
+                  key={chat._id}
+                >
+                  <Text display="flex" alignItems="center">
+                    {!chat.isGroupChat
+                      ? getSender(loggedUser, chat.users)
+                      : chat.chatName}
+                    {!chat.isGroupChat && isOnline && (
+                      <Box
+                        w="10px"
+                        h="10px"
+                        borderRadius="50%"
+                        bg="green.500"
+                        ml={2}
+                        title="Online"
+                      />
+                    )}
                   </Text>
-                )}
-              </Box>
-            ))}
+                  {chat.latestMessage && (
+                    <Text fontSize="xs">
+                      <b>{chat.latestMessage.sender.name} : </b>
+                      {chat.latestMessage.content.length > 50
+                        ? chat.latestMessage.content.substring(0, 51) + "..."
+                        : chat.latestMessage.content}
+                    </Text>
+                  )}
+                </Box>
+              );
+            })}
           </Stack>
         ) : (
           <ChatLoading />
