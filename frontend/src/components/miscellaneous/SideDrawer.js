@@ -145,14 +145,21 @@ function SideDrawer() {
             bg="gray.50"
             _hover={{ bg: "gray.100", borderColor: "gray.300" }}
             borderRadius="lg"
-            px={4}
+            px={{ base: 2, md: 4 }}
             size="sm"
           >
-            Search user...
+            <Text display={{ base: "none", md: "inline" }}>Search user...</Text>
           </Button>
         </Tooltip>
-        <Text fontSize="2xl" fontFamily="Work sans" fontWeight="bold" color="teal.500">
-          REAL TIME CHAT APP
+        <Text
+          fontSize={{ base: "lg", md: "2xl" }}
+          fontFamily="Work sans"
+          fontWeight="bold"
+          color="teal.500"
+          textAlign="center"
+        >
+          <Text as="span" display={{ base: "inline", md: "none" }}>Talk</Text>
+          <Text as="span" display={{ base: "none", md: "inline" }}>REAL TIME CHAT APP</Text>
         </Text>
         <Box display="flex" alignItems="center">
           <Menu>
