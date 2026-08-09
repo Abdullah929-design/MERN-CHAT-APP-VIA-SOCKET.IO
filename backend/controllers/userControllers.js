@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
+const Chat = require("../models/chatModel");
 const generateToken = require("../config/generateToken");
 const redisClient = require("../config/redis");
 
@@ -97,4 +98,33 @@ const getOnlineUsers = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { allUsers, registerUser, authUser, getOnlineUsers };
+//@description     Get contacts and chats for the current user
+//@route           GET /api/user/overview
+//@access          Protected
+const getOverview = asyncHandler(async (req, res) => {
+  try {
+    const contacts = await User.find({ _id: { $ne: req.user._id } })
+      .select("-password")
+      .sort({ updatedAt: -1 });
+
+    const chats = await Chat.find({
+      users: { $elemMatch: { $eq: req.user._id } },
+    })
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password")
+      .populate("latestMessage")
+      .sort({ updatedAt: -1 });
+
+    const populatedChats = await User.populate(chats, {
+      path: "latestMessage.sender",
+      select: "name pic email",
+    });
+
+    res.json({ contacts, chats: populatedChats });
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
+module.exports = { allUsers, registerUser, authUser, getOnlineUsers, getOverview };

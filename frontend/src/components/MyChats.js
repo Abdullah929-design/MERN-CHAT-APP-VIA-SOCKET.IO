@@ -5,6 +5,7 @@ import {
 
 import {
   Box,
+  Divider,
   Stack,
   Text,
   useToast,
@@ -27,6 +28,7 @@ import { ChatState } from "../context/ChatProvider";
 const MyChats = ({ fetchAgain }) => {
 
   const [loggedUser, setLoggedUser] = useState();
+  const [contacts, setContacts] = useState();
 
   const {
     selectedChat,
@@ -39,7 +41,7 @@ const MyChats = ({ fetchAgain }) => {
 
   const toast = useToast();
 
-  const fetchChats = async () => {
+  const fetchOverview = async () => {
 
     try {
 
@@ -50,17 +52,18 @@ const MyChats = ({ fetchAgain }) => {
       };
 
       const { data } = await axios.get(
-        "/api/chat",
+        "/api/user/overview",
         config
       );
 
-      setChats(data);
+      setChats(data.chats);
+      setContacts(data.contacts);
 
     } catch (error) {
 
       toast({
         title: "Error",
-        description: "Failed to load chats",
+        description: "Failed to load contacts and chats",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -68,6 +71,37 @@ const MyChats = ({ fetchAgain }) => {
 
     }
 
+  };
+
+  const accessChat = async (userId) => {
+    try {
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      const { data } = await axios.post(
+        "/api/chat",
+        { userId },
+        config
+      );
+
+      if (!chats.find((c) => c._id === data._id)) {
+        setChats([data, ...chats]);
+      }
+
+      setSelectedChat(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open chat",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   useEffect(() => {
@@ -78,10 +112,12 @@ const MyChats = ({ fetchAgain }) => {
       )
     );
 
-    fetchChats();
+    if (user) {
+      fetchOverview();
+    }
 
     // eslint-disable-next-line
-  }, [fetchAgain]);
+  }, [fetchAgain, user]);
 
   return (
 
@@ -252,6 +288,53 @@ const MyChats = ({ fetchAgain }) => {
           <ChatLoading />
 
         )}
+
+        <Divider my={3} />
+
+        <Box px={4} pb={2}>
+          <Text
+            fontSize="12px"
+            fontWeight="600"
+            color="#667781"
+            letterSpacing="0.04em"
+            textTransform="uppercase"
+          >
+            Contacts
+          </Text>
+        </Box>
+
+        {contacts ? (
+          <Stack spacing={0}>
+            {contacts.map((contact) => {
+              const isOnline = onlineUsers?.includes(contact._id);
+
+              return (
+                <Box
+                  key={contact._id}
+                  className="wa-chat-item"
+                  onClick={() => accessChat(contact._id)}
+                >
+                  <Box className="wa-chat-row">
+                    <Avatar size="md" name={contact.name} src={contact.pic} />
+
+                    <Box className="wa-chat-main">
+                      <Box className="wa-chat-name-row">
+                        <Text className="wa-chat-name">
+                          {contact.name}
+                          {isOnline && <span className="wa-online-dot" />}
+                        </Text>
+                      </Box>
+
+                      <Text className="wa-chat-preview">
+                        {contact.email}
+                      </Text>
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Stack>
+        ) : null}
 
       </Box>
 

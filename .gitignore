@@ -30,3 +30,8 @@ redis/
 
 # Redis snapshots
 *.rdb
+
+# Local seeder and exported archives
+backend/seeder.js
+backend/backend.zip
+frontend/frontend.zip
