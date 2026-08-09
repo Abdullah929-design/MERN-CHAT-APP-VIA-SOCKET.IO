@@ -8,8 +8,10 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
+
 import { useEffect } from "react";
 import { useHistory } from "react-router";
+
 import Login from "../components/Authentication/Login";
 import Signup from "../components/Authentication/Signup";
 
@@ -19,42 +21,59 @@ function Homepage() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("userInfo"));
 
-    if (user) history.push("/chats");
+    if (user) {
+      history.push("/chats");
+    }
   }, [history]);
 
   return (
-    <Container maxW="xl" centerContent>
-      <Box
-        d="flex"
-        justifyContent="center"
-        p={3}
-        bg="white"
-        w="100%"
-        m="40px 0 15px 0"
-        borderRadius="lg"
-        borderWidth="1px"
-      >
-        <Text fontSize="4xl" fontFamily="Work sans">
-          REAL TIME CHAT APP
+    <Box className="wa-auth-page">
+      <Container className="wa-auth-card" maxW="460px">
+
+        <Box className="wa-auth-logo">
+          ☎
+        </Box>
+
+        <Text className="wa-auth-title">
+          WhatsApp Chat
         </Text>
-      </Box>
-      <Box bg="white" w="100%" p={4} borderRadius="lg" borderWidth="1px">
-        <Tabs isFitted variant="soft-rounded">
+
+        <Text className="wa-auth-subtitle">
+          Simple. Private. Real-time messaging.
+        </Text>
+
+        <Tabs
+          isFitted
+          variant="soft-rounded"
+          colorScheme="green"
+        >
+
           <TabList mb="1em">
-            <Tab>Login</Tab>
-            <Tab>Sign Up</Tab>
+            <Tab>
+              Log in
+            </Tab>
+
+            <Tab>
+              Sign up
+            </Tab>
           </TabList>
+
           <TabPanels>
-            <TabPanel>
+
+            <TabPanel px={0}>
               <Login />
             </TabPanel>
-            <TabPanel>
+
+            <TabPanel px={0}>
               <Signup />
             </TabPanel>
+
           </TabPanels>
+
         </Tabs>
-      </Box>
-    </Container>
+
+      </Container>
+    </Box>
   );
 }
 

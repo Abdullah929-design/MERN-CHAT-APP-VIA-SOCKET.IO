@@ -1,61 +1,152 @@
-import { Avatar, Tooltip } from "@chakra-ui/react";
-import { useEffect, useRef } from "react";
+import {
+  Avatar,
+  Tooltip,
+} from "@chakra-ui/react";
+
+import {
+  useEffect,
+  useRef,
+} from "react";
+
 import {
   isLastMessage,
   isSameSender,
   isSameSenderMargin,
   isSameUser,
 } from "../config/ChatLogics";
+
 import { ChatState } from "../context/ChatProvider";
 
-const ScrollableChat = ({ messages }) => {
-  const { user } = ChatState();
-  const messagesEndRef = useRef(null);
+const ScrollableChat = ({
+  messages,
+}) => {
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const { user } =
+    ChatState();
+
+  const messagesEndRef =
+    useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+
   }, [messages]);
 
   return (
-    <div style={{ overflowY: "auto", height: "100%", width: "100%", scrollbarWidth: "none" }}>
-      {messages &&
-        messages.map((m, i) => (
-          <div style={{ display: "flex" }} key={m._id}>
-            {(isSameSender(messages, m, i, user._id) ||
-              isLastMessage(messages, i, user._id)) && (
-              <Tooltip label={m.sender.name} placement="bottom-start" hasArrow>
-                <Avatar
-                  mt="7px"
-                  mr={1}
-                  size="sm"
-                  cursor="pointer"
-                  name={m.sender.name}
-                  src={m.sender.pic}
-                />
-              </Tooltip>
-            )}
-            <span
-              style={{
-                backgroundColor: `${
-                  m.sender._id === user._id ? "#BEE3F8" : "#B9F5D0"
-                }`,
-                marginLeft: isSameSenderMargin(messages, m, i, user._id),
-                marginTop: isSameUser(messages, m, i, user._id) ? 3 : 10,
-                borderRadius: "20px",
-                padding: "5px 15px",
-                maxWidth: "75%",
-              }}
+
+    <div className="wa-chat-messages-inner">
+
+      {messages?.map(
+        (m, i) => {
+
+          const sent =
+            m.sender._id ===
+            user._id;
+
+          const showAvatar =
+            isSameSender(
+              messages,
+              m,
+              i,
+              user._id
+            ) ||
+            isLastMessage(
+              messages,
+              i,
+              user._id
+            );
+
+          return (
+
+            <div
+              className={`wa-message-line ${
+                sent
+                  ? "sent"
+                  : "received"
+              }`}
+              key={m._id}
             >
-              {m.content}
-            </span>
-          </div>
-        ))}
-      <div ref={messagesEndRef} />
+
+              {!sent &&
+                showAvatar && (
+
+                  <Tooltip
+                    label={
+                      m.sender.name
+                    }
+                    placement="bottom-start"
+                  >
+
+                    <Avatar
+                      className="wa-message-avatar"
+                      size="xs"
+                      name={
+                        m.sender.name
+                      }
+                      src={
+                        m.sender.pic
+                      }
+                    />
+
+                  </Tooltip>
+
+                )}
+
+              <span
+                className={`wa-message-bubble ${
+                  sent
+                    ? "sent"
+                    : ""
+                }`}
+                style={{
+                  marginLeft:
+                    isSameSenderMargin(
+                      messages,
+                      m,
+                      i,
+                      user._id
+                    ),
+
+                  marginTop:
+                    isSameUser(
+                      messages,
+                      m,
+                      i,
+                      user._id
+                    )
+                      ? 3
+                      : 10,
+                }}
+              >
+
+                {m.content}
+
+                <span className="wa-message-meta">
+
+                  {sent
+                    ? "✓✓"
+                    : ""}
+
+                </span>
+
+              </span>
+
+            </div>
+
+          );
+
+        }
+      )}
+
+      <div
+        ref={messagesEndRef}
+      />
+
     </div>
+
   );
 };
 

@@ -1,141 +1,262 @@
-import { AddIcon } from "@chakra-ui/icons";
-import { Box, Stack, Text, useToast, Button } from "@chakra-ui/react";
+import {
+  AddIcon,
+  SearchIcon,
+} from "@chakra-ui/icons";
+
+import {
+  Box,
+  Stack,
+  Text,
+  useToast,
+  Button,
+  Avatar,
+} from "@chakra-ui/react";
+
 import axios from "axios";
+
 import { useEffect, useState } from "react";
+
 import { getSender } from "../config/ChatLogics";
+
 import ChatLoading from "./ChatLoading";
+
 import GroupChatModal from "./miscellaneous/GroupChatModal";
+
 import { ChatState } from "../context/ChatProvider";
 
 const MyChats = ({ fetchAgain }) => {
+
   const [loggedUser, setLoggedUser] = useState();
 
-  const { selectedChat, setSelectedChat, user, chats, setChats, onlineUsers } = ChatState();
+  const {
+    selectedChat,
+    setSelectedChat,
+    user,
+    chats,
+    setChats,
+    onlineUsers,
+  } = ChatState();
 
   const toast = useToast();
 
   const fetchChats = async () => {
-    // console.log(user._id);
+
     try {
+
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
 
-      const { data } = await axios.get("/api/chat", config);
+      const { data } = await axios.get(
+        "/api/chat",
+        config
+      );
+
       setChats(data);
+
     } catch (error) {
+
       toast({
-        title: "Error Occured!",
-        description: "Failed to Load the chats",
+        title: "Error",
+        description: "Failed to load chats",
         status: "error",
         duration: 5000,
         isClosable: true,
-        position: "bottom-left",
       });
+
     }
+
   };
 
   useEffect(() => {
-    setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
+
+    setLoggedUser(
+      JSON.parse(
+        localStorage.getItem("userInfo")
+      )
+    );
+
     fetchChats();
+
     // eslint-disable-next-line
   }, [fetchAgain]);
 
   return (
+
     <Box
-      display={{ base: selectedChat ? "none" : "flex", md: "flex" }}
-      flexDir="column"
-      alignItems="center"
-      p={3}
-      bg="white"
-      w={{ base: "100%", md: "31%" }}
-      borderRadius="lg"
-      borderWidth="1px"
+      className="wa-sidebar"
+      display={{
+        base: selectedChat ? "none" : "flex",
+        md: "flex",
+      }}
+      flexDirection="column"
     >
-      <Box
-        pb={3}
-        px={3}
-        fontSize={{ base: "28px", md: "30px" }}
-        fontFamily="Work sans"
-        d="flex"
-        w="100%"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        My Chats
+
+      {/* SIDEBAR HEADER */}
+
+      <Box className="wa-side-header">
+
+        <Text
+          fontSize="20px"
+          fontWeight="600"
+        >
+          Chats
+        </Text>
+
         <GroupChatModal>
+
           <Button
-            d="flex"
-            fontSize={{ base: "17px", md: "10px", lg: "17px" }}
-            rightIcon={<AddIcon />}
+            aria-label="New group"
+            title="New group"
+            size="sm"
+            variant="ghost"
+            minW="40px"
           >
-            New Group Chat
+            <AddIcon />
           </Button>
+
         </GroupChatModal>
+
       </Box>
-      <Box
-        d="flex"
-        flexDir="column"
-        p={3}
-        bg="#F8F8F8"
-        w="100%"
-        h="100%"
-        borderRadius="lg"
-        overflowY="hidden"
-      >
+
+      {/* SEARCH */}
+
+      <Box className="wa-search-container">
+
+        <Box className="wa-search-box">
+
+          <SearchIcon />
+
+          <Text
+            fontSize="13px"
+            ml={2}
+            color="#667781"
+          >
+            Search or start new chat
+          </Text>
+
+        </Box>
+
+      </Box>
+
+      {/* CHAT LIST */}
+
+      <Box className="wa-chat-list">
+
         {chats ? (
-          <Stack overflowY="scroll">
+
+          <Stack spacing={0}>
+
             {chats.map((chat) => {
-              const otherUser = !chat.isGroupChat && loggedUser
-                ? chat.users.find((u) => u._id !== loggedUser._id)
-                : null;
-              const isOnline = otherUser && onlineUsers && onlineUsers.includes(otherUser._id);
+
+              const otherUser =
+                !chat.isGroupChat &&
+                loggedUser
+                  ? chat.users.find(
+                      (u) =>
+                        u._id !==
+                        loggedUser._id
+                    )
+                  : null;
+
+              const isOnline =
+                otherUser &&
+                onlineUsers?.includes(
+                  otherUser._id
+                );
+
+              const name =
+                !chat.isGroupChat
+                  ? getSender(
+                      loggedUser,
+                      chat.users
+                    )
+                  : chat.chatName;
+
+              const preview =
+                chat.latestMessage
+                  ? `${chat.latestMessage.sender.name}: ${chat.latestMessage.content}`
+                  : "No messages yet";
 
               return (
+
                 <Box
-                  onClick={() => setSelectedChat(chat)}
-                  cursor="pointer"
-                  bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
-                  color={selectedChat === chat ? "white" : "black"}
-                  px={3}
-                  py={2}
-                  borderRadius="lg"
                   key={chat._id}
+                  className={`wa-chat-item ${
+                    selectedChat?._id === chat._id
+                      ? "wa-chat-item-active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setSelectedChat(chat)
+                  }
                 >
-                  <Text display="flex" alignItems="center">
-                    {!chat.isGroupChat
-                      ? getSender(loggedUser, chat.users)
-                      : chat.chatName}
-                    {!chat.isGroupChat && isOnline && (
-                      <Box
-                        w="10px"
-                        h="10px"
-                        borderRadius="50%"
-                        bg="green.500"
-                        ml={2}
-                        title="Online"
-                      />
-                    )}
-                  </Text>
-                  {chat.latestMessage && (
-                    <Text fontSize="xs">
-                      <b>{chat.latestMessage.sender.name} : </b>
-                      {chat.latestMessage.content.length > 50
-                        ? chat.latestMessage.content.substring(0, 51) + "..."
-                        : chat.latestMessage.content}
-                    </Text>
-                  )}
+
+                  <Box className="wa-chat-row">
+
+                    <Avatar
+                      size="md"
+                      name={name}
+                      src={
+                        !chat.isGroupChat
+                          ? otherUser?.pic
+                          : undefined
+                      }
+                    />
+
+                    <Box className="wa-chat-main">
+
+                      <Box className="wa-chat-name-row">
+
+                        <Text className="wa-chat-name">
+
+                          {name}
+
+                          {!chat.isGroupChat &&
+                            isOnline && (
+                              <span className="wa-online-dot" />
+                            )}
+
+                        </Text>
+
+                        <Text className="wa-chat-time">
+                          {chat.latestMessage
+                            ? "now"
+                            : ""}
+                        </Text>
+
+                      </Box>
+
+                      <Text className="wa-chat-preview">
+
+                        {preview}
+
+                      </Text>
+
+                    </Box>
+
+                  </Box>
+
                 </Box>
+
               );
+
             })}
+
           </Stack>
+
         ) : (
+
           <ChatLoading />
+
         )}
+
       </Box>
+
     </Box>
+
   );
 };
 

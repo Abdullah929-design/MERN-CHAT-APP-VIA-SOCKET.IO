@@ -1,42 +1,56 @@
-import { Avatar, AvatarBadge, Box, Text } from "@chakra-ui/react";
+import {
+  Avatar,
+  AvatarBadge,
+  Box,
+  Text,
+} from "@chakra-ui/react";
+
 import React from "react";
 
-const UserListItem = ({ user, handleFunction, isOnline }) => {
+const UserListItem = ({
+  user,
+  handleFunction,
+  isOnline,
+}) => {
+
   return (
+
     <Box
+      className="wa-user-item"
       onClick={handleFunction}
-      cursor="pointer"
-      bg="#E8E8E8"
-      _hover={{
-        background: "#38B2AC",
-        color: "white",
-      }}
-      w="100%"
-      d="flex"
-      alignItems="center"
-      color="black"
-      px={3}
-      py={2}
-      mb={2}
-      borderRadius="lg"
     >
+
       <Avatar
-        mr={2}
-        size="sm"
-        cursor="pointer"
+        size="md"
         name={user.name}
         src={user.pic}
       >
-        {isOnline && <AvatarBadge boxSize="1.2em" bg="green.500" />}
+
+        {isOnline && (
+
+          <AvatarBadge
+            boxSize="1em"
+            bg="#25d366"
+          />
+
+        )}
+
       </Avatar>
-      <Box>
-        <Text>{user.name}</Text>
-        <Text fontSize="xs">
-          <b>Email : </b>
+
+      <Box className="wa-user-info">
+
+        <Text className="wa-user-name">
+          {user.name}
+        </Text>
+
+        <Text className="wa-user-email">
           {user.email}
         </Text>
+
       </Box>
+
     </Box>
+
   );
 };
 

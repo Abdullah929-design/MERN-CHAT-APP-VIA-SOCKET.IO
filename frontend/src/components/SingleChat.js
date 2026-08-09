@@ -1,273 +1,598 @@
-import { FormControl, Input, Box, Text, IconButton, Spinner, useToast } from "@chakra-ui/react";
-import "./styles.css";
-import { getSender, getSenderFull } from "../config/ChatLogics";
+import {
+  FormControl,
+  Input,
+  Box,
+  Text,
+  IconButton,
+  Spinner,
+  useToast,
+  Avatar,
+} from "@chakra-ui/react";
+
+import {
+  ArrowBackIcon,
+  AttachmentIcon,
+  SmallAddIcon,
+} from "@chakra-ui/icons";
+
 import { useEffect, useState } from "react";
+
 import axios from "axios";
-import { ArrowBackIcon } from "@chakra-ui/icons";
+
+import { getSender, getSenderFull } from "../config/ChatLogics";
+
 import ProfileModal from "./miscellaneous/ProfileModal";
+
 import ScrollableChat from "./ScrollableChat";
+
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
+
 import { ChatState } from "../context/ChatProvider";
-import io from "socket.io-client";
 
-const ENDPOINT = window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin;
-var selectedChatCompare;
+import "./styles.css";
 
+let selectedChatCompare;
 
+const SingleChat = ({
+  fetchAgain,
+  setFetchAgain,
+}) => {
 
-const SingleChat = ({ fetchAgain, setFetchAgain }) => {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [newMessage, setNewMessage] = useState("");
-  const [socketConnected, setSocketConnected] = useState(false);
-  const [typing, setTyping] = useState(false); 
-  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [newMessage, setNewMessage] =
+    useState("");
+
+  const [socketConnected, setSocketConnected] =
+    useState(false);
+
+  const [typing, setTyping] =
+    useState(false);
+
+  const [isTyping, setIsTyping] =
+    useState(false);
+
   const toast = useToast();
 
-  const { selectedChat, setSelectedChat, user, notification, setNotification,socket } =
-    ChatState();
+  const {
+    selectedChat,
+    setSelectedChat,
+    user,
+    notification,
+    setNotification,
+    socket,
+    onlineUsers,
+  } = ChatState();
 
-
+  /* =====================
+     FETCH MESSAGES
+  ===================== */
 
   const fetchMessages = async () => {
+
     if (!selectedChat) return;
 
     try {
+
       const config = {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          Authorization:
+            `Bearer ${user.token}`,
         },
       };
 
       setLoading(true);
 
-      socket.emit("join chat", selectedChat._id);
-
-      const { data } = await axios.get(
-        `/api/message/${selectedChat._id}`,
-        config
+      socket.emit(
+        "join chat",
+        selectedChat._id
       );
-      setMessages(data);
-      setLoading(false);
-    } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Messages",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-    }
-  };
 
-  const sendMessage = async (event) => {
-    if (event.key === "Enter" && newMessage) {
-       socket.emit("stop typing", selectedChat._id); 
-      try {
-        const config = {
-          headers: {
-            "Content-type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        };
-        setNewMessage("");
-        const { data } = await axios.post(
-          "/api/message",
-          {
-            content: newMessage,
-            chatId: selectedChat,
-          },
+      const { data } =
+        await axios.get(
+          `/api/message/${selectedChat._id}`,
           config
         );
 
-        console.log(data);
-        socket.emit("new message", data);
+      setMessages(data);
 
+      setLoading(false);
 
-        setMessages([...messages, data]);
+    } catch (error) {
+
+      setLoading(false);
+
+      toast({
+        title: "Error",
+        description:
+          "Failed to load messages",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+
+    }
+
+  };
+
+  /* =====================
+     SEND MESSAGE
+  ===================== */
+
+  const sendMessage = async (event) => {
+
+    if (
+      event.key === "Enter" &&
+      newMessage.trim()
+    ) {
+
+      socket.emit(
+        "stop typing",
+        selectedChat._id
+      );
+
+      try {
+
+        const config = {
+          headers: {
+            "Content-type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${user.token}`,
+          },
+        };
+
+        const content =
+          newMessage.trim();
+
+        setNewMessage("");
+
+        const { data } =
+          await axios.post(
+            "/api/message",
+            {
+              content,
+              chatId: selectedChat,
+            },
+            config
+          );
+
+        socket.emit(
+          "new message",
+          data
+        );
+
+        setMessages([
+          ...messages,
+          data,
+        ]);
+
       } catch (error) {
+
         toast({
-          title: "Error Occured!",
-          description: "Failed to send the Message",
+          title: "Error",
+          description:
+            "Failed to send message",
           status: "error",
           duration: 5000,
           isClosable: true,
-          position: "bottom",
         });
+
       }
+
     }
-  };
-
-//for typing showing
-  useEffect(() => {
-  if (!socket) return;
-  
-  setSocketConnected(true); // Connected globally
-  socket.on("typing", () => setIsTyping(true));
-  socket.on("stop typing", () => setIsTyping(false));
-  return () => {
-    socket.off("typing");
-    socket.off("stop typing");
-  };
-}, [socket]);
-
-
-  useEffect(() => {
-    fetchMessages();
-    // eslint-disable-next-line
-    selectedChatCompare = selectedChat;
-  }, [selectedChat]);
-
-  const typingHandler = (e) => {
-    setNewMessage(e.target.value);
-
-    if (!socketConnected) return;
-
-    if (!typing) {
-      setTyping(true);
-      socket.emit("typing", selectedChat._id);
-    } 
-
-    let lastTypingTime = new Date().getTime();
-    var timerLength = 3000;
-    setTimeout(() => {
-      var timeNow = new Date().getTime();
-      var timeDiff = timeNow - lastTypingTime;
-      if (timeDiff >= timerLength && typing) {
-        socket.emit("stop typing", selectedChat._id);
-        setTyping(false);
-      }}, timerLength);
-
-
 
   };
 
-  
+  /* =====================
+     SOCKET TYPING
+  ===================== */
 
   useEffect(() => {
+
     if (!socket) return;
-    const handleMessageReceived = (newMessageRecieved) => {
-      if (
-        !selectedChatCompare ||
-        selectedChatCompare._id !== newMessageRecieved.chat._id
-      ) {
-        if (!notification.find((n) => n._id === newMessageRecieved._id)) {
-          setNotification([newMessageRecieved, ...notification]);
-          setFetchAgain(!fetchAgain);
-        }
-      } else {
-        setMessages([...messages, newMessageRecieved]);
-      }
-    };
 
-    socket.on("message recieved", handleMessageReceived);
+    setSocketConnected(true);
+
+    socket.on(
+      "typing",
+      () => setIsTyping(true)
+    );
+
+    socket.on(
+      "stop typing",
+      () => setIsTyping(false)
+    );
 
     return () => {
-      socket.off("message recieved", handleMessageReceived);
+
+      socket.off("typing");
+
+      socket.off(
+        "stop typing"
+      );
+
     };
-  }, [messages, notification, fetchAgain, socketConnected]);
 
+  }, [socket]);
 
+  /* =====================
+     CHAT CHANGE
+  ===================== */
+
+  useEffect(() => {
+
+    fetchMessages();
+
+    selectedChatCompare =
+      selectedChat;
+
+    // eslint-disable-next-line
+  }, [selectedChat]);
+
+  /* =====================
+     TYPING HANDLER
+  ===================== */
+
+  const typingHandler = (e) => {
+
+    setNewMessage(
+      e.target.value
+    );
+
+    if (
+      !socketConnected ||
+      !selectedChat
+    ) {
+      return;
+    }
+
+    if (!typing) {
+
+      setTyping(true);
+
+      socket.emit(
+        "typing",
+        selectedChat._id
+      );
+
+    }
+
+    const lastTypingTime =
+      new Date().getTime();
+
+    setTimeout(() => {
+
+      const timeDiff =
+        new Date().getTime() -
+        lastTypingTime;
+
+      if (
+        timeDiff >= 3000 &&
+        typing
+      ) {
+
+        socket.emit(
+          "stop typing",
+          selectedChat._id
+        );
+
+        setTyping(false);
+
+      }
+
+    }, 3000);
+
+  };
+
+  /* =====================
+     RECEIVE MESSAGE
+  ===================== */
+
+  useEffect(() => {
+
+    if (!socket) return;
+
+    const handleMessageReceived =
+      (newMessageReceived) => {
+
+        if (
+          !selectedChatCompare ||
+          selectedChatCompare._id !==
+            newMessageReceived.chat._id
+        ) {
+
+          if (
+            !notification.find(
+              (n) =>
+                n._id ===
+                newMessageReceived._id
+            )
+          ) {
+
+            setNotification([
+              newMessageReceived,
+              ...notification,
+            ]);
+
+            setFetchAgain(
+              !fetchAgain
+            );
+
+          }
+
+        } else {
+
+          setMessages([
+            ...messages,
+            newMessageReceived,
+          ]);
+
+        }
+
+      };
+
+    socket.on(
+      "message recieved",
+      handleMessageReceived
+    );
+
+    return () => {
+
+      socket.off(
+        "message recieved",
+        handleMessageReceived
+      );
+
+    };
+
+  }, [
+    messages,
+    notification,
+    fetchAgain,
+    socket,
+    setFetchAgain,
+    setNotification,
+  ]);
+
+  /* =====================
+     EMPTY CHAT
+  ===================== */
+
+  if (!selectedChat) {
+
+    return (
+
+      <Box className="wa-empty-chat">
+
+        <Box>
+
+          <Text className="wa-empty-chat-title">
+            WhatsApp Web
+          </Text>
+
+          <Text className="wa-empty-chat-text">
+            Send and receive messages
+            without keeping your phone online.
+          </Text>
+
+        </Box>
+
+      </Box>
+
+    );
+
+  }
+
+  /* =====================
+     CHAT INFO
+  ===================== */
+
+  const isGroup =
+    selectedChat.isGroupChat;
+
+  const chatName =
+    isGroup
+      ? selectedChat.chatName
+      : getSender(
+          user,
+          selectedChat.users
+        );
+
+  const chatUser =
+    !isGroup
+      ? getSenderFull(
+          user,
+          selectedChat.users
+        )
+      : null;
+
+  const isOtherOnline =
+    chatUser &&
+    onlineUsers?.includes(
+      chatUser._id
+    );
+
+  /* =====================
+     UI
+  ===================== */
 
   return (
-    <>
-      {selectedChat ? (
-        <>
-          <Text
-            fontSize={{ base: "28px", md: "30px" }}
-            pb={3}
-            px={2}
-            w="100%"
-            fontFamily="Work sans"
-            display="flex"
-            justifyContent={{ base: "space-between" }}
-            alignItems="center"
-          >
-            <IconButton
-              display={{ base: "flex", md: "none" }}
-              icon={<ArrowBackIcon />}
-              onClick={() => setSelectedChat("")}
-            />
-            {messages &&
-              (!selectedChat.isGroupChat ? (
-                <>
-                  {getSender(user, selectedChat.users)}
-                  <ProfileModal
-                    user={getSenderFull(user, selectedChat.users)}
-                  />
-                </>
-              ) : (
-                <>
-                  {selectedChat.chatName.toUpperCase()}
-                  <UpdateGroupChatModal
-                    fetchMessages={fetchMessages}
-                    fetchAgain={fetchAgain}
-                    setFetchAgain={setFetchAgain}
-                  />
-                </>
-              ))}
-          </Text>
-          <Box
-            display="flex"
-            flexDir="column"
-            justifyContent="flex-end"
-            p={3}
-            bg="#E8E8E8"
-            w="100%"
-            h="100%"
-            borderRadius="lg"
-            overflowY="hidden"
-          >
-            {loading ? (
-              <Spinner
-                size="xl"
-                w={20}
-                h={20}
-                alignSelf="center"
-                margin="auto"
-              />
-            ) : (
-              <div className="messages">
-                <ScrollableChat messages={messages} />
-              </div>
-            )}
 
-            <FormControl
-              onKeyDown={sendMessage}
-              id="first-name"
-              isRequired
-              mt={3}
-            >
-            {isTyping ? (
-              <div>
-                <Text fontSize="sm" color="gray.500">
-                  Someone is typing...
-                </Text>
-              </div>
-            ) : (
-              <></>
-            )}
-            
-              <Input
-                variant="filled"
-                bg="#E0E0E0"
-                placeholder="Enter a message.."
-                value={newMessage}
-                onChange={typingHandler}
-              />
-            </FormControl>
-          </Box>
-        </>
-      ) : (
-        <Box display="flex" alignItems="center" justifyContent="center" h="100%">
-          <Text fontSize="3xl" pb={3} fontFamily="Work sans">
-            Click on a user to start chatting
+    <Box className="wa-chat-shell">
+
+      {/* HEADER */}
+
+      <Box className="wa-chat-header">
+
+        <IconButton
+          display={{
+            base: "flex",
+            md: "none",
+          }}
+          variant="ghost"
+          icon={<ArrowBackIcon />}
+          onClick={() =>
+            setSelectedChat("")
+          }
+          mr={2}
+          aria-label="Back"
+        />
+
+        <Avatar
+          size="sm"
+          name={chatName}
+          src={
+            !isGroup
+              ? chatUser?.pic
+              : undefined
+          }
+          mr={3}
+        />
+
+        <Box
+          flex="1"
+          minW="0"
+        >
+
+          <Text
+            className="wa-chat-header-name"
+            noOfLines={1}
+          >
+            {chatName}
           </Text>
+
+          <Text className="wa-chat-header-status">
+
+            {isGroup
+              ? `${selectedChat.users?.length || 0} participants`
+              : isOtherOnline
+              ? "online"
+              : "offline"}
+
+          </Text>
+
         </Box>
-      )}
-    </>
+
+        {isGroup ? (
+
+          <UpdateGroupChatModal
+            fetchMessages={fetchMessages}
+            fetchAgain={fetchAgain}
+            setFetchAgain={
+              setFetchAgain
+            }
+          />
+
+        ) : (
+
+          <ProfileModal user={chatUser} />
+
+        )}
+
+      </Box>
+
+      {/* MESSAGES */}
+
+      <Box className="wa-chat-messages">
+
+        {loading ? (
+
+          <Spinner
+            size="xl"
+            position="absolute"
+            left="50%"
+            top="50%"
+            transform="translate(-50%, -50%)"
+            color="#00a884"
+          />
+
+        ) : (
+
+          <div className="messages">
+
+            <ScrollableChat
+              messages={messages}
+            />
+
+          </div>
+
+        )}
+
+      </Box>
+
+      {/* COMPOSER */}
+
+      <Box className="wa-composer">
+
+        <IconButton
+          aria-label="Emoji"
+          icon={<SmallAddIcon />}
+          variant="ghost"
+          color="#54656f"
+        />
+
+        <IconButton
+          aria-label="Attachment"
+          icon={<AttachmentIcon />}
+          variant="ghost"
+          color="#54656f"
+          mr={2}
+        />
+
+        <FormControl
+          onKeyDown={sendMessage}
+          isRequired
+        >
+
+          {isTyping && (
+
+            <div className="wa-typing">
+              typing...
+            </div>
+
+          )}
+
+          <Input
+            placeholder="Type a message"
+            value={newMessage}
+            onChange={typingHandler}
+            autoComplete="off"
+          />
+
+        </FormControl>
+
+        <button
+          className="wa-send-button"
+          type="button"
+          onClick={() => {
+
+            if (
+              newMessage.trim()
+            ) {
+
+              sendMessage({
+                key: "Enter",
+              });
+
+            }
+
+          }}
+        >
+          ➤
+        </button>
+
+      </Box>
+
+    </Box>
+
   );
+
 };
 
 export default SingleChat;

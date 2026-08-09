@@ -1,4 +1,7 @@
-import { ViewIcon } from "@chakra-ui/icons";
+import {
+  ViewIcon,
+} from "@chakra-ui/icons";
+
 import {
   Modal,
   ModalOverlay,
@@ -12,55 +15,137 @@ import {
   IconButton,
   Text,
   Image,
+  Box,
 } from "@chakra-ui/react";
 
-const ProfileModal = ({ user, children }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+const ProfileModal = ({
+  user,
+  children,
+}) => {
+
+  const {
+    isOpen,
+    onOpen,
+    onClose,
+  } = useDisclosure();
 
   return (
+
     <>
+
       {children ? (
-        <span onClick={onOpen}>{children}</span>
+
+        <span onClick={onOpen}>
+          {children}
+        </span>
+
       ) : (
-        <IconButton d={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
+
+        <IconButton
+          variant="ghost"
+          icon={<ViewIcon />}
+          onClick={onOpen}
+          aria-label="Profile"
+          color="#54656f"
+        />
+
       )}
-      <Modal size="lg" onClose={onClose} isOpen={isOpen} isCentered>
+
+      <Modal
+        size="sm"
+        onClose={onClose}
+        isOpen={isOpen}
+        isCentered
+      >
+
         <ModalOverlay />
-        <ModalContent h="410px">
+
+        <ModalContent>
+
           <ModalHeader
-            fontSize="40px"
-            fontFamily="Work sans"
-            d="flex"
-            justifyContent="center"
+            bg="#008069"
+            color="white"
+            textAlign="center"
           >
-            {user.name}
+            Contact info
           </ModalHeader>
-          <ModalCloseButton />
+
+          <ModalCloseButton
+            color="white"
+          />
+
           <ModalBody
-            d="flex"
-            flexDir="column"
+            display="flex"
+            flexDirection="column"
             alignItems="center"
-            justifyContent="space-between"
+            py={8}
           >
+
             <Image
               borderRadius="full"
-              boxSize="150px"
+              boxSize="130px"
               src={user.pic}
               alt={user.name}
+              mb={5}
             />
+
             <Text
-              fontSize={{ base: "28px", md: "30px" }}
-              fontFamily="Work sans"
+              fontSize="24px"
+              fontWeight="500"
             >
-              Email: {user.email}
+              {user.name}
             </Text>
+
+            <Text
+              mt={2}
+              color="#667781"
+            >
+              {user.email}
+            </Text>
+
+            <Box
+              width="100%"
+              mt={7}
+              borderTop="1px solid #e9edef"
+              pt={5}
+            >
+
+              <Text
+                fontSize="13px"
+                color="#667781"
+              >
+                About
+              </Text>
+
+              <Text mt={2}>
+                Available
+              </Text>
+
+            </Box>
+
           </ModalBody>
+
           <ModalFooter>
-            <Button onClick={onClose}>Close</Button>
+
+            <Button
+              onClick={onClose}
+              bg="#00a884"
+              color="white"
+              _hover={{
+                bg: "#008f72",
+              }}
+            >
+              Close
+            </Button>
+
           </ModalFooter>
+
         </ModalContent>
+
       </Modal>
+
     </>
+
   );
 };
 

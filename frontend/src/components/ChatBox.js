@@ -1,25 +1,45 @@
 import { Box } from "@chakra-ui/react";
+
 import "./styles.css";
+
 import SingleChat from "./SingleChat";
+
 import { ChatState } from "../context/ChatProvider";
 
-const Chatbox = ({ fetchAgain, setFetchAgain }) => {
-  const { selectedChat } = ChatState();
+const Chatbox = ({
+  fetchAgain,
+  setFetchAgain,
+}) => {
+
+  const {
+    selectedChat,
+  } = ChatState();
 
   return (
+
     <Box
-      display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
-      alignItems="center"
-      flexDir="column"
-      p={3}
-      bg="white"
-      w={{ base: "100%", md: "68%" }}
-      borderRadius="lg"
-      borderWidth="1px"
+      className="wa-chatbox"
+      display={{
+        base: selectedChat
+          ? "flex"
+          : "none",
+
+        md: "flex",
+      }}
+      flexDirection="column"
     >
-      <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
+
+      <SingleChat
+        fetchAgain={fetchAgain}
+        setFetchAgain={
+          setFetchAgain
+        }
+      />
+
     </Box>
+
   );
+
 };
 
 export default Chatbox;
